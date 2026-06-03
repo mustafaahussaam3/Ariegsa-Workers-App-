@@ -1191,10 +1191,12 @@ async function exportExcel(){
   ents.forEach((e,idx)=>{
     const d=new Date(e.date+'T00:00:00');
     const ds=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    const dayName=WD[d.getDay()]; // اسم اليوم من التاريخ
+    const dateCell=ds+'\n'+dayName; // التاريخ وتحته اسم اليوم
     ws.getRow(r).height=42;
     ws.mergeCells(`I${r}:L${r}`); // خانة Tasks مدموجة زي القالب
     const lv=isLeave(e);
-    const rowVals=[['A',idx+1],['B',ds],['C',placeText(e)],
+    const rowVals=[['A',idx+1],['B',dateCell],['C',placeText(e)],
                    ['D',lv?'':(e.travS||'')],['E',lv?'':(e.mamS||'')],['F',lv?'':(e.mamE||'')],['G',lv?'':(e.retE||'')],
                    ['H',''],['I',e.tasks||''],
                    ['M',''],['N',''],['O',''],['P',''],['Q','']]; // عمود H (بيات/اجازة رسمية) والأعمدة الإضافية فاضية
