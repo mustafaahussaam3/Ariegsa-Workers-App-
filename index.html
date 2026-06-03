@@ -375,6 +375,10 @@
         <div class="chip gold" id="chipOfficial" onclick="setStatus('إجازة رسمية')">📅 إجازة رسمية</div>
         <div class="chip" id="chipCredit" onclick="setStatus('إجازة من الرصيد')">🌴 إجازة من الرصيد</div>
       </div>
+      <div id="leaveTypeBox" style="display:none;">
+        <label>نوع الإجازة الرسمية <span style="opacity:.5">(هيتكتب في خانة المكان)</span></label>
+        <input type="text" id="fLeaveType" placeholder="مثال: عيد الفطر / عيد العمال / إجازة سنوية" onchange="recalc()">
+      </div>
       <label>المكان</label>
       <button class="ghost" style="margin:0 0 8px;padding:11px;" onclick="detectLocation()">📍 أنا هنا (تحديد المكان تلقائياً)</button>
       <select id="fPlace" onchange="onPlaceChange()">
@@ -744,8 +748,8 @@ function fillMonthSelects(){
 function autoDay(){const d=document.getElementById('fDate').value;if(!d){document.getElementById('dayBadge').textContent='—';return;}const dt=new Date(d+'T00:00:00');const name=WD[dt.getDay()];if(curStatus==='work')document.getElementById('dayBadge').textContent=name;
   // NOTE: entry month is chosen manually by the user — we do NOT override it from the date
   recalc();}
-function setStatus(s){curStatus=s;document.getElementById('chipWork').classList.toggle('on',s==='work');document.getElementById('chipOfficial').classList.toggle('on',s==='إجازة رسمية');document.getElementById('chipCredit').classList.toggle('on',s==='إجازة من الرصيد');const b=document.getElementById('dayBadge');b.className='daybadge';const tf=document.getElementById('timeFields');if(s==='work'){autoDay();tf.style.opacity='1';tf.style.pointerEvents='auto';}else if(s==='إجازة رسمية'){b.textContent='إجازة رسمية';b.classList.add('vac-official');tf.style.opacity='1';tf.style.pointerEvents='auto';}else{b.textContent='إجازة من الرصيد';b.classList.add('vac-credit');tf.style.opacity='.4';tf.style.pointerEvents='none';}recalc();}
-function readForm(){const date=document.getElementById('fDate').value;let day=document.getElementById('dayBadge').textContent;if(curStatus!=='work')day=curStatus;return {date,month:document.getElementById('fEntryMonth').value,day,place:document.getElementById('fPlace').value,mamS:document.getElementById('fMamS').value,mamE:document.getElementById('fMamE').value,travS:document.getElementById('fTravS').value,travE:document.getElementById('fTravE').value,retS:document.getElementById('fRetS').value,retE:document.getElementById('fRetE').value,tasks:document.getElementById('fTasks').value,transportType:(document.getElementById('fTransportType')?document.getElementById('fTransportType').value.trim():''),transportFrom:(document.getElementById('fTransportFrom')?document.getElementById('fTransportFrom').value.trim():''),transportTo:(document.getElementById('fTransportTo')?document.getElementById('fTransportTo').value.trim():''),transportMoney:(document.getElementById('fTransportMoney')?parseFloat(document.getElementById('fTransportMoney').value)||0:0),transportTaken:(document.getElementById('fTransportTaken')?document.getElementById('fTransportTaken').classList.contains('on'):false),otherType:(document.getElementById('fOtherType')?document.getElementById('fOtherType').value.trim():''),otherMoney:(document.getElementById('fOtherMoney')?parseFloat(document.getElementById('fOtherMoney').value)||0:0),otherTaken:(document.getElementById('fOtherTaken')?document.getElementById('fOtherTaken').classList.contains('on'):false)};}
+function setStatus(s){curStatus=s;document.getElementById('chipWork').classList.toggle('on',s==='work');document.getElementById('chipOfficial').classList.toggle('on',s==='إجازة رسمية');document.getElementById('chipCredit').classList.toggle('on',s==='إجازة من الرصيد');const b=document.getElementById('dayBadge');b.className='daybadge';const tf=document.getElementById('timeFields');const ltb=document.getElementById('leaveTypeBox');if(ltb)ltb.style.display=(s==='إجازة رسمية')?'block':'none';if(s==='work'){autoDay();tf.style.opacity='1';tf.style.pointerEvents='auto';}else if(s==='إجازة رسمية'){b.textContent='إجازة رسمية';b.classList.add('vac-official');tf.style.opacity='1';tf.style.pointerEvents='auto';}else{b.textContent='إجازة من الرصيد';b.classList.add('vac-credit');tf.style.opacity='.4';tf.style.pointerEvents='none';}recalc();}
+function readForm(){const date=document.getElementById('fDate').value;let day=document.getElementById('dayBadge').textContent;if(curStatus!=='work')day=curStatus;return {date,month:document.getElementById('fEntryMonth').value,day,leaveType:(document.getElementById('fLeaveType')?document.getElementById('fLeaveType').value.trim():''),place:document.getElementById('fPlace').value,mamS:document.getElementById('fMamS').value,mamE:document.getElementById('fMamE').value,travS:document.getElementById('fTravS').value,travE:document.getElementById('fTravE').value,retS:document.getElementById('fRetS').value,retE:document.getElementById('fRetE').value,tasks:document.getElementById('fTasks').value,transportType:(document.getElementById('fTransportType')?document.getElementById('fTransportType').value.trim():''),transportFrom:(document.getElementById('fTransportFrom')?document.getElementById('fTransportFrom').value.trim():''),transportTo:(document.getElementById('fTransportTo')?document.getElementById('fTransportTo').value.trim():''),transportMoney:(document.getElementById('fTransportMoney')?parseFloat(document.getElementById('fTransportMoney').value)||0:0),transportTaken:(document.getElementById('fTransportTaken')?document.getElementById('fTransportTaken').classList.contains('on'):false),otherType:(document.getElementById('fOtherType')?document.getElementById('fOtherType').value.trim():''),otherMoney:(document.getElementById('fOtherMoney')?parseFloat(document.getElementById('fOtherMoney').value)||0:0),otherTaken:(document.getElementById('fOtherTaken')?document.getElementById('fOtherTaken').classList.contains('on'):false)};}
 function recalc(){
   const e=readForm();
   const b=otBreakdown(e);
@@ -826,7 +830,7 @@ function clearForm(){
   document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('fEntryMonth').value=getLastMonth();
   document.getElementById('fPlace').value='';
-  ['fMamS','fMamE','fTravS','fTravE','fRetS','fRetE','fTasks','fTransportType','fTransportFrom','fTransportTo','fTransportMoney','fOtherType','fOtherMoney'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fMamS','fMamE','fTravS','fTravE','fRetS','fRetE','fTasks','fLeaveType','fTransportType','fTransportFrom','fTransportTo','fTransportMoney','fOtherType','fOtherMoney'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   setTransportTakenState(false);
   setOtherTakenState(false);
   document.getElementById('fMamS').value='18:00';
@@ -932,7 +936,7 @@ function toggleEntryOther(idx){
 
 /* RECORDS */
 function renderRecords(){const sel=document.getElementById('monthSel');const m=sel.value||getLastMonth();setLastMonth(m);fillMonthSelects();sel.value=m;document.getElementById('recMonthName').textContent=m;const ents=getEntries().filter(e=>entryMonth(e)===m).sort((a,b)=>a.date.localeCompare(b.date));const list=document.getElementById('fullList');list.innerHTML=ents.length?ents.map(e=>recRow(e,true)).join(''):'<div class="empty">لا توجد سجلات لهذا الشهر</div>';}
-function editEntry(idx){const e=getEntries()[idx];if(!e)return;editIndex=idx;nav('add');document.getElementById('fDate').value=e.date;document.getElementById('fEntryMonth').value=entryMonth(e);document.getElementById('fPlace').value=e.place||'';document.getElementById('fMamS').value=e.mamS||'';document.getElementById('fMamE').value=e.mamE||'';document.getElementById('fTravS').value=e.travS||'';document.getElementById('fTravE').value=e.travE||'';document.getElementById('fRetS').value=e.retS||'';document.getElementById('fRetE').value=e.retE||'';document.getElementById('fTasks').value=e.tasks||'';if(document.getElementById('fTransportType'))document.getElementById('fTransportType').value=transportType(e)||'';if(document.getElementById('fTransportFrom'))document.getElementById('fTransportFrom').value=transportFrom(e)||'';if(document.getElementById('fTransportTo'))document.getElementById('fTransportTo').value=transportTo(e)||'';if(document.getElementById('fTransportMoney'))document.getElementById('fTransportMoney').value=transportAmount(e)||'';setTransportTakenState(transportTaken(e));if(document.getElementById('fOtherType'))document.getElementById('fOtherType').value=otherType(e)||'';if(document.getElementById('fOtherMoney'))document.getElementById('fOtherMoney').value=otherAmount(e)||'';setOtherTakenState(otherTaken(e));if(e.day==='إجازة رسمية')setStatus('إجازة رسمية');else if(e.day==='إجازة من الرصيد')setStatus('إجازة من الرصيد');else setStatus('work');document.getElementById('editCancel').style.display='block';recalc();}
+function editEntry(idx){const e=getEntries()[idx];if(!e)return;editIndex=idx;nav('add');document.getElementById('fDate').value=e.date;document.getElementById('fEntryMonth').value=entryMonth(e);document.getElementById('fPlace').value=e.place||'';document.getElementById('fMamS').value=e.mamS||'';document.getElementById('fMamE').value=e.mamE||'';document.getElementById('fTravS').value=e.travS||'';document.getElementById('fTravE').value=e.travE||'';document.getElementById('fRetS').value=e.retS||'';document.getElementById('fRetE').value=e.retE||'';document.getElementById('fTasks').value=e.tasks||'';if(document.getElementById('fTransportType'))document.getElementById('fTransportType').value=transportType(e)||'';if(document.getElementById('fTransportFrom'))document.getElementById('fTransportFrom').value=transportFrom(e)||'';if(document.getElementById('fTransportTo'))document.getElementById('fTransportTo').value=transportTo(e)||'';if(document.getElementById('fTransportMoney'))document.getElementById('fTransportMoney').value=transportAmount(e)||'';setTransportTakenState(transportTaken(e));if(document.getElementById('fOtherType'))document.getElementById('fOtherType').value=otherType(e)||'';if(document.getElementById('fOtherMoney'))document.getElementById('fOtherMoney').value=otherAmount(e)||'';setOtherTakenState(otherTaken(e));if(e.day==='إجازة رسمية')setStatus('إجازة رسمية');else if(e.day==='إجازة من الرصيد')setStatus('إجازة من الرصيد');else setStatus('work');if(document.getElementById('fLeaveType'))document.getElementById('fLeaveType').value=e.leaveType||'';document.getElementById('editCancel').style.display='block';recalc();}
 function delEntry(idx){if(!confirm('حذف هذا اليوم؟'))return;const db=loadDB();db.entries.splice(idx,1);saveDB(db);renderRecords();toast('تم الحذف');}
 
 /* SALARY */
@@ -1141,14 +1145,14 @@ async function exportExcel(){
   const EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const mi=MONTHS.indexOf(m); const mEn=mi>=0?EN[mi]:m;
   const company=s.company||'شركة اريجسا الصناعية';
-  // عمود "بيات / اجازة رسمية" يتملّى من نوع اليوم
-  const dayCol=(e)=>{
+  // نص الإجازة اللي هيتكتب في خانة "المكان"
+  const placeText=(e)=>{
     const d=e.day||'';
-    if(d==='إجازة رسمية')return 'اجازة رسمية';
+    if(d==='إجازة رسمية')return (e.leaveType&&e.leaveType.trim())?e.leaveType.trim():'اجازة رسمية';
     if(d==='إجازة من الرصيد')return 'اجازة';
-    if(d==='الجمعة'||d==='السبت')return d;
-    return '';
+    return e.place||'';
   };
+  const isLeave=(e)=>e.day==='إجازة رسمية'||e.day==='إجازة من الرصيد';
 
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Sheet1',{views:[{rightToLeft:true}]});
@@ -1189,8 +1193,11 @@ async function exportExcel(){
     const ds=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
     ws.getRow(r).height=42;
     ws.mergeCells(`I${r}:L${r}`); // خانة Tasks مدموجة زي القالب
-    const rowVals=[['A',idx+1],['B',ds],['C',e.place||''],['D',e.travS||''],['E',e.mamS||''],['F',e.mamE||''],['G',e.retE||''],['H',dayCol(e)],['I',e.tasks||''],
-                   ['M',''],['N',''],['O',''],['P',''],['Q','']]; // الأعمدة الإضافية فاضية
+    const lv=isLeave(e);
+    const rowVals=[['A',idx+1],['B',ds],['C',placeText(e)],
+                   ['D',lv?'':(e.travS||'')],['E',lv?'':(e.mamS||'')],['F',lv?'':(e.mamE||'')],['G',lv?'':(e.retE||'')],
+                   ['H',''],['I',e.tasks||''],
+                   ['M',''],['N',''],['O',''],['P',''],['Q','']]; // عمود H (بيات/اجازة رسمية) والأعمدة الإضافية فاضية
     rowVals.forEach(([col,val])=>{setCell(`${col}${r}`,val,{size:12,border:allDbl});});
     r++;
   });
