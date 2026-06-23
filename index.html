@@ -250,7 +250,7 @@
       <label>اسم المكان *</label>
       <input type="text" id="pmName" placeholder="مثال: مصنع طنطا">
       <label>طريقة الحساب *</label>
-      <div class="chips"><div class="chip" id="pmJana" onclick="pmType('jana')">زي جناكليس (بدل 100)</div></div>
+      <div class="chips"><div class="chip" id="pmJana" onclick="pmType('jana')">زي جناكليس (حساب أيام عادية + بدل 100)</div></div>
       <div class="chips"><div class="chip" id="pmOther" onclick="pmType('other')">مختلف — أدخل الأسعار</div></div>
       <div id="pmFields" style="display:none;">
         <label>سعر البدل (جنيه)</label>
@@ -622,9 +622,8 @@ function rateFor(month){return salaryFor(month)/240;}
 function tH(t){if(!t)return 0;const p=String(t).split(':');return parseInt(p[0])+(parseInt(p[1]||0))/60;}
 function segTotal(s,e){if(!s||!e)return 0;const sh=tH(s),eh=tH(e);return eh<sh?(24-sh+eh):(eh-sh);}
 function otWD(s,e,total){const cr=e<s;const u=(a,b)=>Math.max(0,Math.min(9,b)-Math.max(8,a))+Math.max(0,Math.min(18,b)-Math.max(17,a))+Math.max(0,Math.min(17,b)-Math.max(9,a));const un=cr?(u(s,24)+u(0,e)):u(s,e);return Math.max(0,total-un);}
-// جناكليس (أيام العمل العادية فقط): شيل 8–9ص و 5–6م من الوقت العادي وخليهم أوفرتايم.
-// يعني الوقت العادي يبقى 9ص–5م بس، وأي حاجة بره دي أوفرتايم.
-function otWDJana(s,e,total){const cr=e<s;const u=(a,b)=>Math.max(0,Math.min(17,b)-Math.max(9,a));const un=cr?(u(s,24)+u(0,e)):u(s,e);return Math.max(0,total-un);}
+// جناكليس والأماكن المشابهة تُحسب مثل أيام العمل العادية في اريجسا.
+// الفرق الوحيد أن لها بدل مأمورية ثابت 100 جنيه.
 function isJanaPlace(e){
   if(!e)return false;
   if(e.place==='جناكليس')return true;
@@ -632,7 +631,7 @@ function isJanaPlace(e){
   return !!(p && p.type==='jana');
 }
 function dayType(d){if(d==='الجمعة'||d==='إجازة رسمية')return 'fri';if(d==='السبت')return 'sat';if(d==='إجازة من الرصيد')return 'leave';return 'wd';}
-function calcOT(e){const dt=dayType(e.day);if(dt==='leave')return 0;const tm=segTotal(e.mamS,e.mamE),t1=segTotal(e.travS,e.travE),t2=segTotal(e.retS,e.retE);if(dt==='fri')return round(tm*2+t1+t2);if(dt==='sat')return round(tm*1.5+t1+t2);const otMam=isJanaPlace(e)?otWDJana(tH(e.mamS),tH(e.mamE),tm):otWD(tH(e.mamS),tH(e.mamE),tm);return round(otMam*1.5+otWD(tH(e.travS),tH(e.travE),t1)+otWD(tH(e.retS),tH(e.retE),t2));}
+function calcOT(e){const dt=dayType(e.day);if(dt==='leave')return 0;const tm=segTotal(e.mamS,e.mamE),t1=segTotal(e.travS,e.travE),t2=segTotal(e.retS,e.retE);if(dt==='fri')return round(tm*2+t1+t2);if(dt==='sat')return round(tm*1.5+t1+t2);const otMam=otWD(tH(e.mamS),tH(e.mamE),tm);return round(otMam*1.5+otWD(tH(e.travS),tH(e.travE),t1)+otWD(tH(e.retS),tH(e.retE),t2));}
 function calcLate(e){
   if(dayType(e.day)!=='wd')return 0;
   // (a) arrival lateness: arrived after 9am
@@ -659,7 +658,7 @@ function calcLate(e){
   else { baseHours = lateArr; }
   return round(baseHours*1.5);
 }
-function netOT(e){return Math.max(0,round(calcOT(e)-calcLate(e)));}
+function netOT(e){return round(calcOT(e)-calcLate(e));}
 function otBreakdown(e){
   const dt=dayType(e.day);
   // raw eligible OT hours (before the multiplier) for mamoria, plus travel hours
@@ -668,17 +667,17 @@ function otBreakdown(e){
   if(dt==='leave'){ return {rawMam:0,mult:0,travel:0,weighted:0,late:0,net:0}; }
   if(dt==='fri'){ rawMam=tm; mult=2; }
   else if(dt==='sat'){ rawMam=tm; mult=1.5; }
-  else { rawMam=(isJanaPlace(e)?otWDJana:otWD)(tH(e.mamS),tH(e.mamE),tm); mult=1.5; }
+  else { rawMam=otWD(tH(e.mamS),tH(e.mamE),tm); mult=1.5; }
   // travel always counted at x1, using gap rules on weekdays
   let travel=0;
   if(dt==='fri'||dt==='sat'){ travel=t1+t2; }
   else { travel=otWD(tH(e.travS),tH(e.travE),t1)+otWD(tH(e.retS),tH(e.retE),t2); }
   const weighted=round(rawMam*mult+travel);
   const late=calcLate(e);
-  const net=Math.max(0,round(weighted-late));
+  const net=round(weighted-late);
   return {rawMam:round(rawMam),mult,travel:round(travel),weighted,late:round(late),net};
 }
-function badalOf(e){if(e.place==='جناكليس'||e.place==='الكلية الجوية')return 100;const p=getPlaces()[e.place];return p?(p.badal||0):0;}
+function badalOf(e){if(e.place==='جناكليس'||e.place==='الكلية الجوية')return 100;const p=getPlaces()[e.place];if(p&&p.type==='jana')return 100;return p?(p.badal||0):0;}
 function placeOTRate(e,defRate){const p=getPlaces()[e.place];return (p&&p.type==='other'&&p.rate)?p.rate:defRate;}
 function round(x){return Math.round(x*10000)/10000;}
 function monthOf(d){return MONTHS[new Date(d+'T00:00:00').getMonth()];}
@@ -699,18 +698,20 @@ function otherTaken(e){return !!e.otherTaken;}
 /* month aggregates */
 function monthAgg(m){
   const ents=getEntries().filter(e=>entryMonth(e)===m);
-  let gross=0,late=0,net=0,badal=0,vac=0,otIncome=0,transport=0,transportTakenTotal=0,other=0,otherTakenTotal=0;
+  let gross=0,late=0,badal=0,vac=0,otIncome=0,transport=0,transportTakenTotal=0,other=0,otherTakenTotal=0;
   const rate=rateFor(m);
   ents.forEach(e=>{
-    const eNet=netOT(e), eLate=calcLate(e);
-    gross+=calcOT(e); late+=eLate; net+=eNet; badal+=badalOf(e);
+    const eGross=calcOT(e), eLate=calcLate(e);
+    gross+=eGross; late+=eLate; badal+=badalOf(e);
     if(e.day==='إجازة من الرصيد')vac++;
     const tr=transportAmount(e); transport+=tr; if(transportTaken(e))transportTakenTotal+=tr; const oth=otherAmount(e); other+=oth; if(otherTaken(e))otherTakenTotal+=oth;
-    otIncome += eNet * placeOTRate(e, rate); // custom hour rate per place if set
+    otIncome += eGross * placeOTRate(e, rate); // gross overtime money before deduction
   });
+  gross=round(gross); late=round(late);
+  const net=round(gross-late); // صافي الأوفرتايم = إجمالي الأوفرتايم − خصم التأخير
   otIncome=round(otIncome);
   const ded=round(late*rate);
-  return {ents,gross:round(gross),late:round(late),net:round(net),badal,vac,
+  return {ents,gross,late,net,badal,vac,
           rate:round(rate),base:salaryFor(m),otIncome,ded,transport:round(transport),transportTaken:round(transportTakenTotal),transportPending:round(transport-transportTakenTotal),other:round(other),otherTaken:round(otherTakenTotal),otherPending:round(other-otherTakenTotal),
           monthTotal:round(salaryFor(m)+otIncome+badal-ded+transport+other)};
 }
@@ -1102,12 +1103,12 @@ function yearlyIncomeSummary(){
       const base=salaryFor(m);
       let late=0,badal=0,otIncome=0,tr=0,oth=0;
       ents.forEach(e=>{
-        const eNet=netOT(e);
+        const eGross=calcOT(e);
         late+=calcLate(e);
         badal+=badalOf(e);
         tr+=transportAmount(e);
         oth+=otherAmount(e);
-        otIncome+=eNet*placeOTRate(e,rateFor(m));
+        otIncome+=eGross*placeOTRate(e,rateFor(m));
       });
       const ded=round(late*rateFor(m));
       const otNet=round(otIncome)+badal-ded;
